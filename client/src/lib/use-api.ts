@@ -13,6 +13,19 @@ type ApiClient = {
   getHotels: <T = { hotels: unknown[] }>(
     options?: RequestOptions
   ) => Promise<T>;
+  createHotel: <T = unknown>(
+    payload: { name: string; location: string; status?: string },
+    options?: RequestOptions
+  ) => Promise<T>;
+  updateHotel: <T = unknown>(
+    id: number,
+    payload: Partial<{ name: string; location: string; status: string }>,
+    options?: RequestOptions
+  ) => Promise<T>;
+  deleteHotel: (
+    id: number,
+    options?: RequestOptions
+  ) => Promise<void>;
 };
 
 export function useApi(): ApiClient {
@@ -54,9 +67,41 @@ export function useApi(): ApiClient {
     [request]
   );
 
+  const createHotel: ApiClient["createHotel"] = useCallback(
+    (payload, options) =>
+      request("/hotels", {
+        ...options,
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
+    [request]
+  );
+
+  const updateHotel: ApiClient["updateHotel"] = useCallback(
+    (id, payload, options) =>
+      request(`/hotels/${id}`, {
+        ...options,
+        method: "PUT",
+        body: JSON.stringify(payload),
+      }),
+    [request]
+  );
+
+  const deleteHotel: ApiClient["deleteHotel"] = useCallback(
+    (id, options) =>
+      request<void>(`/hotels/${id}`, {
+        ...options,
+        method: "DELETE",
+      }),
+    [request]
+  );
+
   return {
     request,
     getHotels,
+    createHotel,
+    updateHotel,
+    deleteHotel,
   };
 }
 
@@ -64,7 +109,7 @@ async function safeErrorMessage(res: Response): Promise<string | null> {
   try {
     const data = await res.json();
     if (data?.error) return data.error as string;
-  } catch (err) {
+  } catch {
     // ignore JSON parse errors
   }
   return null;
