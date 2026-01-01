@@ -1,14 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { useApi } from "@/lib/use-api";
 import { getAuth } from "@/lib/auth-storage";
@@ -31,16 +23,13 @@ import {
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import {
+  RoomTypeTable,
+  type RoomTypeRow,
+} from "@/components/room-types/room-type-table";
 import { RoomTypeForm } from "./components/room-type-form";
 
-type RoomType = {
-  id: number;
-  hotel_id: number;
-  name: string;
-  base_rate: number;
-  effective_rate?: number;
-  created_at: string;
-};
+type RoomType = RoomTypeRow & { hotel_id: number };
 
 type HotelSummary = {
   id: number;
@@ -181,14 +170,14 @@ function RoomTypesPage() {
     setIsDialogOpen(true);
   };
 
-  const handleEditClick = (roomType: RoomType) => {
+  const handleEditClick = (roomType: RoomTypeRow) => {
     setDialogMode("edit");
-    setActiveRoomType(roomType);
+    setActiveRoomType(roomType as RoomType);
     setIsDialogOpen(true);
   };
 
-  const handleDeleteClick = (roomType: RoomType) => {
-    setRoomTypeToDelete(roomType);
+  const handleDeleteClick = (roomType: RoomTypeRow) => {
+    setRoomTypeToDelete(roomType as RoomType);
     setDeleteError(null);
     setConfirmOpen(true);
   };
@@ -328,86 +317,37 @@ function RoomTypesPage() {
         </DialogContent>
       </Dialog>
 
-      <div className="rounded-md border bg-background">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>ID</TableHead>
-              <TableHead>Hotel ID</TableHead>
-              <TableHead>Name</TableHead>
-              <TableHead>Base Rate</TableHead>
-              <TableHead>Effective Rate</TableHead>
-              <TableHead>Created</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading && (
-              <TableRow>
-                <TableCell colSpan={7}>Loading...</TableCell>
-              </TableRow>
-            )}
-            {error && !loading && (
-              <TableRow>
-                <TableCell colSpan={7} className="text-red-500">
-                  {error}
-                </TableCell>
-              </TableRow>
-            )}
-            {!loading && !error && roomTypes.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={7}>No room types found.</TableCell>
-              </TableRow>
-            )}
-            {!loading &&
-              !error &&
-              roomTypes.map((rt) => (
-                <TableRow key={rt.id}>
-                  <TableCell>{rt.id}</TableCell>
-                  <TableCell>{rt.hotel_id}</TableCell>
-                  <TableCell className="font-medium">{rt.name}</TableCell>
-                  <TableCell>${rt.base_rate.toFixed(2)}</TableCell>
-                  <TableCell>
-                    {rt.effective_rate !== undefined
-                      ? `$${rt.effective_rate.toFixed(2)}`
-                      : "—"}
-                  </TableCell>
-                  <TableCell>
-                    {new Intl.DateTimeFormat(undefined, {
-                      year: "numeric",
-                      month: "short",
-                      day: "numeric",
-                    }).format(new Date(rt.created_at))}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        aria-label={`Edit ${rt.name}`}
-                        onClick={() => handleEditClick(rt)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                        <span className="sr-only">Edit {rt.name}</span>
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-destructive hover:text-destructive"
-                        aria-label={`Delete ${rt.name}`}
-                        onClick={() => handleDeleteClick(rt)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        <span className="sr-only">Delete {rt.name}</span>
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-          </TableBody>
-        </Table>
-      </div>
+      <RoomTypeTable
+        roomTypes={roomTypes}
+        loading={loading}
+        error={error}
+        emptyMessage="No room types found."
+        showHotelColumn
+        renderActions={(roomType) => (
+          <>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              aria-label={`Edit ${roomType.name}`}
+              onClick={() => handleEditClick(roomType)}
+            >
+              <Pencil className="h-4 w-4" />
+              <span className="sr-only">Edit {roomType.name}</span>
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-destructive hover:text-destructive"
+              aria-label={`Delete ${roomType.name}`}
+              onClick={() => handleDeleteClick(roomType)}
+            >
+              <Trash2 className="h-4 w-4" />
+              <span className="sr-only">Delete {roomType.name}</span>
+            </Button>
+          </>
+        )}
+      />
 
       <ConfirmDialog
         open={confirmOpen}

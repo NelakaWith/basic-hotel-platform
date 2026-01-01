@@ -11,17 +11,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { toast } from "sonner";
 import { useApi } from "@/lib/use-api";
 import { getAuth } from "@/lib/auth-storage";
+import {
+  RoomTypeTable,
+  type RoomTypeRow,
+} from "@/components/room-types/room-type-table";
 
 type HotelDetail = {
   id: number;
@@ -31,13 +27,7 @@ type HotelDetail = {
   created_at: string;
 };
 
-type RoomType = {
-  id: number;
-  name: string;
-  base_rate: number;
-  effective_rate?: number;
-  created_at: string;
-};
+type RoomType = RoomTypeRow;
 
 function normalizeHotelResponse(payload: unknown): HotelDetail | null {
   if (!payload || typeof payload !== "object") {
@@ -228,55 +218,12 @@ function HotelDetailPage() {
         </CardContent>
       </Card>
 
-      <div className="rounded-md border bg-background">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>ID</TableHead>
-              <TableHead>Name</TableHead>
-              <TableHead>Base Rate</TableHead>
-              <TableHead>Effective Rate</TableHead>
-              <TableHead>Created</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {roomTypesLoading && (
-              <TableRow>
-                <TableCell colSpan={5}>Loading room types...</TableCell>
-              </TableRow>
-            )}
-            {roomTypesError && !roomTypesLoading && (
-              <TableRow>
-                <TableCell colSpan={5} className="text-destructive">
-                  {roomTypesError}
-                </TableCell>
-              </TableRow>
-            )}
-            {!roomTypesLoading && !roomTypesError && roomTypes.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={5}>
-                  {hotel ? "No room types configured." : "Select a hotel."}
-                </TableCell>
-              </TableRow>
-            )}
-            {!roomTypesLoading &&
-              !roomTypesError &&
-              roomTypes.map((type) => (
-                <TableRow key={type.id}>
-                  <TableCell>{type.id}</TableCell>
-                  <TableCell className="font-medium">{type.name}</TableCell>
-                  <TableCell>${type.base_rate.toFixed(2)}</TableCell>
-                  <TableCell>
-                    {type.effective_rate !== undefined
-                      ? `$${type.effective_rate.toFixed(2)}`
-                      : "—"}
-                  </TableCell>
-                  <TableCell>{formatDate(type.created_at)}</TableCell>
-                </TableRow>
-              ))}
-          </TableBody>
-        </Table>
-      </div>
+      <RoomTypeTable
+        roomTypes={roomTypes}
+        loading={roomTypesLoading}
+        error={roomTypesError}
+        emptyMessage={hotel ? "No room types configured." : "Select a hotel."}
+      />
     </section>
   );
 }
