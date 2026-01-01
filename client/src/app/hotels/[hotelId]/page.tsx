@@ -43,6 +43,7 @@ function normalizeHotelResponse(payload: unknown): HotelDetail | null {
     return extracted ?? null;
   }
 
+  // API occasionally responds with HotelDetail directly.
   return payload as HotelDetail;
 }
 
@@ -176,6 +177,7 @@ function HotelDetailPage() {
 
     const auth = getAuth();
     if (!auth?.user) {
+      // Protect detail routes when the local session has gone stale.
       router.replace("/auth");
       return;
     }

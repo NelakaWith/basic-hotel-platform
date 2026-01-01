@@ -53,6 +53,7 @@ export function ConfirmDialog({
     if (onCancel) {
       onCancel();
     } else {
+      // If no custom cancel handler, closing the dialog is sufficient.
       onOpenChange?.(false);
     }
   };

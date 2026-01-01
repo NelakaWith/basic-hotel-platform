@@ -34,6 +34,7 @@ export function AppNavigation() {
   }, [pathname]);
 
   if (!ready || !authed) {
+    // Hide the nav entirely on the auth screen to keep the flow focused.
     return null;
   }
 

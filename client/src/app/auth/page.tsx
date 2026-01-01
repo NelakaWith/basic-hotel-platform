@@ -26,6 +26,7 @@ function AuthPage() {
   useEffect(() => {
     const auth = getAuth();
     if (auth?.user) {
+      // Skip the form entirely when a user already has a session.
       router.replace("/hotels");
     }
   }, [router]);
@@ -41,6 +42,7 @@ function AuthPage() {
         method: "POST",
         body: JSON.stringify({ username, password }),
       });
+      // Persist the bare minimum user data; cookies carry server auth.
       setAuth({ user: data.user });
       router.push("/hotels");
     } catch (err: unknown) {

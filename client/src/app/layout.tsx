@@ -29,6 +29,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        {/* Keep shell-level UI (nav + toasts) outside page routes. */}
         <AppNavigation />
         {children}
         <Toaster position="top-right" richColors closeButton />

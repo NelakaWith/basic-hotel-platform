@@ -86,6 +86,7 @@ function RoomTypesPage() {
           const next = list.find((item) => item.id === current.id);
           return next ?? current;
         });
+        // Keep both dialogs referencing the freshest list to avoid stale rows.
         setHistoryRoomType((current) => {
           if (!current) return current;
           const next = list.find((item) => item.id === current.id);
@@ -108,6 +109,7 @@ function RoomTypesPage() {
   useEffect(() => {
     const auth = getAuth();
     if (!auth?.user) {
+      // Guard the screen if the cookie disappeared while mounted.
       router.replace("/auth");
       return;
     }
@@ -215,6 +217,7 @@ function RoomTypesPage() {
     setRoomTypeToDelete(null);
     setConfirmOpen(false);
     fetchRoomTypes(nextId);
+    // Persist filter in URL so deep links reopen the same context.
     const params = new URLSearchParams(searchParams.toString());
     params.set("hotelId", String(nextId));
     const query = params.toString();
@@ -239,6 +242,7 @@ function RoomTypesPage() {
       setConfirmOpen(false);
       setRoomTypeToDelete(null);
       if (selectedHotelId) {
+        // Refresh the filtered list after a destructive action.
         fetchRoomTypes(selectedHotelId);
       } else {
         setRoomTypes([]);

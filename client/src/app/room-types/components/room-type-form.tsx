@@ -70,6 +70,7 @@ export function RoomTypeForm({
   const handleSubmit = form.handleSubmit(async (values) => {
     const auth = getAuth();
     if (!auth?.user) {
+      // Let users know immediately when their cookie expires mid-dialog.
       const message = "Your session has expired. Please sign in again.";
       setSubmitError(message);
       toast.error(message);
@@ -85,6 +86,7 @@ export function RoomTypeForm({
     }
 
     if (parsedRate < 0) {
+      // Guard against accidental negative inputs that would tank pricing.
       const message = "Base rate must be zero or higher.";
       setSubmitError(message);
       toast.error(message);

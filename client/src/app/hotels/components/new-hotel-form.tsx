@@ -71,6 +71,7 @@ export function NewHotelForm({
   const handleSubmit = form.handleSubmit(async (values) => {
     const auth = getAuth();
     if (!auth?.user) {
+      // Server rejects calls without cookies, but short-circuit for UX.
       const message = "Your session has expired. Please sign in again.";
       setSubmitError(message);
       toast.error(message);
@@ -90,6 +91,7 @@ export function NewHotelForm({
         form.reset(payload);
       } else {
         await createHotel(payload);
+        // Reset to defaults so the dialog is ready for the next entry.
         form.reset({ name: "", location: "", status: "active" });
       }
 

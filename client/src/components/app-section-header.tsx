@@ -33,6 +33,7 @@ export function AppSectionHeader({
       <ChevronLeft className="h-4 w-4" />
     </Link>
   ) : (
+    // Preserve layout alignment even when no back URL exists.
     <Button
       variant="outline"
       size="icon"

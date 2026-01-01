@@ -58,6 +58,7 @@ type ApiClient = {
 };
 
 export function useApi(): ApiClient {
+  // Snapshot the API base so client components have a stable target.
   const baseUrl = useMemo(
     () => process.env.NEXT_PUBLIC_API_URL || DEFAULT_API_BASE,
     []
@@ -66,6 +67,7 @@ export function useApi(): ApiClient {
   const request = useCallback(
     async <T = unknown>(path: string, options: RequestOptions = {}) => {
       const { headers, ...rest } = options;
+      // Enforce JSON defaults while allowing per-call overrides.
       const mergedHeaders: Record<string, string> = {
         "Content-Type": "application/json",
         ...(headers as Record<string, string> | undefined),
@@ -78,6 +80,7 @@ export function useApi(): ApiClient {
       });
 
       if (res.status === 401) {
+        // Purge local auth state and push the user back through login.
         clearAuth();
         if (typeof window !== "undefined") {
           window.location.href = "/auth";
@@ -91,7 +94,7 @@ export function useApi(): ApiClient {
         throw new Error(message || `Request failed (${res.status})`);
       }
 
-      // Handle empty responses
+      // Some endpoints intentionally respond with 204 (no body).
       if (res.status === 204) return undefined as T;
       return (await res.json()) as T;
     },
@@ -211,6 +214,7 @@ export function useApi(): ApiClient {
   };
 }
 
+// Gracefully surface API-provided error payloads when available.
 async function safeErrorMessage(res: Response): Promise<string | null> {
   try {
     const data = await res.json();
