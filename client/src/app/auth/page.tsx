@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,15 +12,45 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
+import { useApi } from "@/lib/use-api";
+import { getAuth, setAuth } from "@/lib/auth-storage";
 
 function AuthPage() {
   const router = useRouter();
+  const { request } = useApi();
+  const [username, setUsername] = useState("admin");
+  const [password, setPassword] = useState("password123");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (event: React.FormEvent) => {
+  useEffect(() => {
+    const auth = getAuth();
+    if (auth?.token) {
+      router.replace("/hotels");
+    }
+  }, [router]);
+
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    // Handle authentication logic here
-    router.push("/hotels");
+    setError(null);
+    setLoading(true);
+    try {
+      const data = await request<{
+        token: string;
+        user: { id: number; username: string };
+      }>("/login", {
+        method: "POST",
+        body: JSON.stringify({ username, password }),
+      });
+      setAuth({ token: data.token, user: data.user });
+      router.push("/hotels");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Sign-in failed");
+    } finally {
+      setLoading(false);
+    }
   };
+
   return (
     <section className="flex min-h-screen items-center justify-center p-4">
       <Card className="w-full max-w-md">
@@ -37,12 +68,11 @@ function AuthPage() {
                 id="username"
                 type="text"
                 placeholder="Username"
-                // value={username}
-                // onChange={(e) => setUsername(e.target.value)}
-                // disabled={isLoading}
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                disabled={loading}
                 autoFocus
               />
-              {/* {error && <p className="text-sm text-red-500">{error}</p>} */}
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
@@ -50,15 +80,18 @@ function AuthPage() {
                 id="password"
                 type="password"
                 placeholder="Password"
-                // value={username}
-                // onChange={(e) => setUsername(e.target.value)}
-                // disabled={isLoading}
-                autoFocus
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={loading}
               />
-              {/* {error && <p className="text-sm text-red-500">{error}</p>} */}
             </div>
-            <Button type="submit" className="w-full cursor-pointer">
-              Sign In
+            {error && <p className="text-sm text-red-500">{error}</p>}
+            <Button
+              type="submit"
+              className="w-full cursor-pointer"
+              disabled={loading}
+            >
+              {loading ? "Signing in..." : "Sign In"}
             </Button>
           </form>
         </CardContent>
