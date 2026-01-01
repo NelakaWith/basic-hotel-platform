@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Button } from "@/components/ui/button";
 import { useParams, useRouter } from "next/navigation";
 import { AppSectionHeader } from "@/components/app-section-header";
 import {
@@ -18,6 +19,8 @@ import {
   RoomTypeTable,
   type RoomTypeRow,
 } from "@/components/room-types/room-type-table";
+import { TrendingUp } from "lucide-react";
+import { RoomTypeAdjustmentsDialog } from "@/app/room-types/components/room-type-adjustments-dialog";
 
 type HotelDetail = {
   id: number;
@@ -62,6 +65,11 @@ function HotelDetailPage() {
   const [roomTypesLoading, setRoomTypesLoading] = useState(true);
   const [hotelError, setHotelError] = useState<string | null>(null);
   const [roomTypesError, setRoomTypesError] = useState<string | null>(null);
+  const [authToken, setAuthToken] = useState<string | null>(null);
+  const [isAdjustmentDialogOpen, setIsAdjustmentDialogOpen] = useState(false);
+  const [adjustmentRoomType, setAdjustmentRoomType] = useState<RoomType | null>(
+    null
+  );
   const { getHotel, getRoomTypes } = useApi();
 
   const hotelId = useMemo(() => {
@@ -84,6 +92,11 @@ function HotelDetailPage() {
       month: "short",
       day: "numeric",
     }).format(new Date(value));
+  };
+
+  const handleAdjustmentsClick = (roomType: RoomTypeRow) => {
+    setAdjustmentRoomType(roomType as RoomType);
+    setIsAdjustmentDialogOpen(true);
   };
 
   const fetchHotel = useCallback(
@@ -122,7 +135,13 @@ function HotelDetailPage() {
         const data = await getRoomTypes<{ room_types: RoomType[] }>(id, {
           authToken: token,
         });
-        setRoomTypes(data.room_types || []);
+        const list = data.room_types || [];
+        setRoomTypes(list);
+        setAdjustmentRoomType((current) => {
+          if (!current) return current;
+          const next = list.find((item) => item.id === current.id);
+          return next ?? current;
+        });
       } catch (err) {
         const message =
           err instanceof Error ? err.message : "Failed to load room types";
@@ -153,6 +172,7 @@ function HotelDetailPage() {
       return;
     }
 
+    setAuthToken(auth.token);
     fetchHotel(auth.token, hotelId);
     fetchRoomTypes(auth.token, hotelId);
   }, [fetchHotel, fetchRoomTypes, hotelId, router]);
@@ -223,6 +243,36 @@ function HotelDetailPage() {
         loading={roomTypesLoading}
         error={roomTypesError}
         emptyMessage={hotel ? "No room types configured." : "Select a hotel."}
+        actionsColumnLabel="Adjustments"
+        renderActions={(roomType) => (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            aria-label={`Adjust rate for ${roomType.name}`}
+            onClick={() => handleAdjustmentsClick(roomType)}
+          >
+            <TrendingUp className="h-4 w-4" />
+            <span className="sr-only">Adjust rate for {roomType.name}</span>
+          </Button>
+        )}
+      />
+
+      <RoomTypeAdjustmentsDialog
+        roomType={adjustmentRoomType}
+        open={isAdjustmentDialogOpen}
+        authToken={authToken}
+        onOpenChange={(open) => {
+          setIsAdjustmentDialogOpen(open);
+          if (!open) {
+            setAdjustmentRoomType(null);
+          }
+        }}
+        onAdjustmentSaved={() => {
+          if (authToken && hotelId !== null) {
+            fetchRoomTypes(authToken, hotelId);
+          }
+        }}
       />
     </section>
   );

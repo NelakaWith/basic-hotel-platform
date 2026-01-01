@@ -48,6 +48,19 @@ type ApiClient = {
     id: number,
     options?: RequestOptions
   ) => Promise<void>;
+  getRoomTypeAdjustments: <T = { adjustments: unknown[] }>(
+    roomTypeId: number,
+    options?: RequestOptions
+  ) => Promise<T>;
+  createRoomTypeAdjustment: <T = unknown>(
+    roomTypeId: number,
+    payload: {
+      effective_date: string;
+      adjustment_amount: number;
+      reason: string;
+    },
+    options?: RequestOptions
+  ) => Promise<T>;
 };
 
 export function useApi(): ApiClient {
@@ -157,6 +170,24 @@ export function useApi(): ApiClient {
     [request]
   );
 
+  const getRoomTypeAdjustments: ApiClient["getRoomTypeAdjustments"] =
+    useCallback(
+      (roomTypeId, options) =>
+        request(`/room-types/${roomTypeId}/adjustments`, options),
+      [request]
+    );
+
+  const createRoomTypeAdjustment: ApiClient["createRoomTypeAdjustment"] =
+    useCallback(
+      (roomTypeId, payload, options) =>
+        request(`/room-types/${roomTypeId}/adjustments`, {
+          ...options,
+          method: "POST",
+          body: JSON.stringify(payload),
+        }),
+      [request]
+    );
+
   return {
     request,
     getHotels,
@@ -168,6 +199,8 @@ export function useApi(): ApiClient {
     createRoomType,
     updateRoomType,
     deleteRoomType,
+    getRoomTypeAdjustments,
+    createRoomTypeAdjustment,
   };
 }
 

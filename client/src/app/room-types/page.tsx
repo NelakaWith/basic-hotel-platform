@@ -21,13 +21,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ConfirmDialog } from "@/components/confirm-dialog";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
 import {
   RoomTypeTable,
   type RoomTypeRow,
 } from "@/components/room-types/room-type-table";
 import { RoomTypeForm } from "./components/room-type-form";
+import { RoomTypeAdjustmentsDialog } from "./components/room-type-adjustments-dialog";
 
 type RoomType = RoomTypeRow & { hotel_id: number };
 
@@ -55,6 +56,10 @@ function RoomTypesPage() {
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [hotels, setHotels] = useState<HotelSummary[]>([]);
   const [selectedHotelId, setSelectedHotelId] = useState<number | null>(null);
+  const [isAdjustmentDialogOpen, setIsAdjustmentDialogOpen] = useState(false);
+  const [adjustmentRoomType, setAdjustmentRoomType] = useState<RoomType | null>(
+    null
+  );
   const { getRoomTypes, deleteRoomType, getHotels } = useApi();
   const selectedHotel =
     hotels.find((hotel) => hotel.id === selectedHotelId) ?? null;
@@ -73,7 +78,13 @@ function RoomTypesPage() {
         const data = await getRoomTypes<{ room_types: RoomType[] }>(hotelId, {
           authToken: token,
         });
-        setRoomTypes(data.room_types || []);
+        const list = data.room_types || [];
+        setRoomTypes(list);
+        setAdjustmentRoomType((current) => {
+          if (!current) return current;
+          const next = list.find((item) => item.id === current.id);
+          return next ?? current;
+        });
       } catch (err: unknown) {
         const message =
           err instanceof Error ? err.message : "Failed to load room types";
@@ -180,6 +191,11 @@ function RoomTypesPage() {
     setRoomTypeToDelete(roomType as RoomType);
     setDeleteError(null);
     setConfirmOpen(true);
+  };
+
+  const handleAdjustmentsClick = (roomType: RoomTypeRow) => {
+    setAdjustmentRoomType(roomType as RoomType);
+    setIsAdjustmentDialogOpen(true);
   };
 
   const handleHotelChange = (value: string) => {
@@ -329,6 +345,16 @@ function RoomTypesPage() {
               variant="ghost"
               size="icon"
               className="h-8 w-8"
+              aria-label={`Adjust rate for ${roomType.name}`}
+              onClick={() => handleAdjustmentsClick(roomType)}
+            >
+              <TrendingUp className="h-4 w-4" />
+              <span className="sr-only">Adjust rate for {roomType.name}</span>
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
               aria-label={`Edit ${roomType.name}`}
               onClick={() => handleEditClick(roomType)}
             >
@@ -375,6 +401,23 @@ function RoomTypesPage() {
           <p className="text-sm text-destructive">{deleteError}</p>
         ) : null}
       </ConfirmDialog>
+
+      <RoomTypeAdjustmentsDialog
+        roomType={adjustmentRoomType}
+        open={isAdjustmentDialogOpen}
+        authToken={authToken}
+        onOpenChange={(open) => {
+          setIsAdjustmentDialogOpen(open);
+          if (!open) {
+            setAdjustmentRoomType(null);
+          }
+        }}
+        onAdjustmentSaved={() => {
+          if (authToken && selectedHotelId) {
+            fetchRoomTypes(authToken, selectedHotelId);
+          }
+        }}
+      />
     </section>
   );
 }
