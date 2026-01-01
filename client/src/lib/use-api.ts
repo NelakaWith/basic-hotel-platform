@@ -26,6 +26,24 @@ type ApiClient = {
     id: number,
     options?: RequestOptions
   ) => Promise<void>;
+  getRoomTypes: <T = { room_types: unknown[] }>(
+    hotelId: number,
+    options?: RequestOptions
+  ) => Promise<T>;
+  createRoomType: <T = unknown>(
+    hotelId: number,
+    payload: { name: string; base_rate: number },
+    options?: RequestOptions
+  ) => Promise<T>;
+  updateRoomType: <T = unknown>(
+    id: number,
+    payload: Partial<{ name: string; base_rate: number }>,
+    options?: RequestOptions
+  ) => Promise<T>;
+  deleteRoomType: (
+    id: number,
+    options?: RequestOptions
+  ) => Promise<void>;
 };
 
 export function useApi(): ApiClient {
@@ -96,12 +114,50 @@ export function useApi(): ApiClient {
     [request]
   );
 
+  const getRoomTypes: ApiClient["getRoomTypes"] = useCallback(
+    (hotelId, options) => request(`/hotels/${hotelId}/room-types`, options),
+    [request]
+  );
+
+  const createRoomType: ApiClient["createRoomType"] = useCallback(
+    (hotelId, payload, options) =>
+      request(`/hotels/${hotelId}/room-types`, {
+        ...options,
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
+    [request]
+  );
+
+  const updateRoomType: ApiClient["updateRoomType"] = useCallback(
+    (id, payload, options) =>
+      request(`/room-types/${id}`, {
+        ...options,
+        method: "PUT",
+        body: JSON.stringify(payload),
+      }),
+    [request]
+  );
+
+  const deleteRoomType: ApiClient["deleteRoomType"] = useCallback(
+    (id, options) =>
+      request<void>(`/room-types/${id}`, {
+        ...options,
+        method: "DELETE",
+      }),
+    [request]
+  );
+
   return {
     request,
     getHotels,
     createHotel,
     updateHotel,
     deleteHotel,
+    getRoomTypes,
+    createRoomType,
+    updateRoomType,
+    deleteRoomType,
   };
 }
 
