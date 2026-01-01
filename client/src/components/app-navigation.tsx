@@ -31,6 +31,10 @@ export function AppNavigation() {
     return () => cancelAnimationFrame(id);
   }, []);
 
+  if (!ready || !authed) {
+    return null;
+  }
+
   return (
     <div className="border-b bg-background">
       <div className="mx-auto flex items-center px-4 py-3">
@@ -56,33 +60,25 @@ export function AppNavigation() {
                 </NavigationMenuItem>
               );
             })}
+            {ready && authed ? (
+              <NavigationMenuItem>
+                <NavigationMenuLink asChild active={false}>
+                  <button
+                    onClick={() => {
+                      clearAuth();
+                      window.location.href = "/auth";
+                    }}
+                    className={cn(
+                      "rounded-md px-3 py-2 text-sm font-medium transition-colors text-foreground/80 hover:bg-muted hover:text-foreground"
+                    )}
+                  >
+                    Logout
+                  </button>
+                </NavigationMenuLink>
+              </NavigationMenuItem>
+            ) : null}
           </NavigationMenuList>
         </NavigationMenu>
-        <div className="flex items-center gap-2">
-          {ready && authed ? (
-            <button
-              onClick={() => {
-                clearAuth();
-                window.location.href = "/auth";
-              }}
-              className="rounded-md px-3 py-2 text-sm font-medium text-foreground/80 transition-colors hover:bg-muted hover:text-foreground"
-            >
-              Logout
-            </button>
-          ) : (
-            <Link
-              href="/auth"
-              className={cn(
-                "rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                pathname === "/auth"
-                  ? "bg-accent text-accent-foreground"
-                  : "text-foreground/80 hover:bg-muted hover:text-foreground"
-              )}
-            >
-              Login
-            </Link>
-          )}
-        </div>
       </div>
     </div>
   );
