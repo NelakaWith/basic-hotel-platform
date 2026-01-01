@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ConfirmDialog } from "@/components/confirm-dialog";
-import { Pencil, Trash2, TrendingUp } from "lucide-react";
+import { History, Pencil, Trash2, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
 import {
   RoomTypeTable,
@@ -29,6 +29,7 @@ import {
 } from "@/components/room-types/room-type-table";
 import { RoomTypeForm } from "./components/room-type-form";
 import { RoomTypeAdjustmentsDialog } from "./components/room-type-adjustments-dialog";
+import { RoomTypeHistoryDialog } from "./components/room-type-history-dialog";
 
 type RoomType = RoomTypeRow & { hotel_id: number };
 
@@ -60,6 +61,8 @@ function RoomTypesPage() {
   const [adjustmentRoomType, setAdjustmentRoomType] = useState<RoomType | null>(
     null
   );
+  const [isHistoryDialogOpen, setIsHistoryDialogOpen] = useState(false);
+  const [historyRoomType, setHistoryRoomType] = useState<RoomType | null>(null);
   const { getRoomTypes, deleteRoomType, getHotels } = useApi();
   const selectedHotel =
     hotels.find((hotel) => hotel.id === selectedHotelId) ?? null;
@@ -81,6 +84,11 @@ function RoomTypesPage() {
         const list = data.room_types || [];
         setRoomTypes(list);
         setAdjustmentRoomType((current) => {
+          if (!current) return current;
+          const next = list.find((item) => item.id === current.id);
+          return next ?? current;
+        });
+        setHistoryRoomType((current) => {
           if (!current) return current;
           const next = list.find((item) => item.id === current.id);
           return next ?? current;
@@ -196,6 +204,11 @@ function RoomTypesPage() {
   const handleAdjustmentsClick = (roomType: RoomTypeRow) => {
     setAdjustmentRoomType(roomType as RoomType);
     setIsAdjustmentDialogOpen(true);
+  };
+
+  const handleHistoryClick = (roomType: RoomTypeRow) => {
+    setHistoryRoomType(roomType as RoomType);
+    setIsHistoryDialogOpen(true);
   };
 
   const handleHotelChange = (value: string) => {
@@ -345,6 +358,18 @@ function RoomTypesPage() {
               variant="ghost"
               size="icon"
               className="h-8 w-8"
+              aria-label={`View adjustment history for ${roomType.name}`}
+              onClick={() => handleHistoryClick(roomType)}
+            >
+              <History className="h-4 w-4" />
+              <span className="sr-only">
+                View adjustment history for {roomType.name}
+              </span>
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
               aria-label={`Adjust rate for ${roomType.name}`}
               onClick={() => handleAdjustmentsClick(roomType)}
             >
@@ -415,6 +440,18 @@ function RoomTypesPage() {
         onAdjustmentSaved={() => {
           if (authToken && selectedHotelId) {
             fetchRoomTypes(authToken, selectedHotelId);
+          }
+        }}
+      />
+
+      <RoomTypeHistoryDialog
+        roomType={historyRoomType}
+        open={isHistoryDialogOpen}
+        authToken={authToken}
+        onOpenChange={(open) => {
+          setIsHistoryDialogOpen(open);
+          if (!open) {
+            setHistoryRoomType(null);
           }
         }}
       />

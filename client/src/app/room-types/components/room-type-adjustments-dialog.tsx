@@ -37,6 +37,8 @@ const textareaClasses =
 
 const formatCurrency = (value: number) => `$${value.toFixed(2)}`;
 
+const RECENT_HISTORY_LIMIT = 3;
+
 const formatAdjustment = (value: number) => {
   const abs = Math.abs(value);
   if (value > 0) return `+${formatCurrency(abs)}`;
@@ -219,7 +221,15 @@ export function RoomTypeAdjustmentsDialog({
             </div>
 
             <div className="space-y-3">
-              <p className="text-sm font-medium">Adjustment history</p>
+              <div className="flex flex-wrap items-center justify-between gap-2 text-sm font-medium">
+                <p>Recent adjustments</p>
+                {adjustments.length > RECENT_HISTORY_LIMIT ? (
+                  <span className="text-xs font-normal text-muted-foreground">
+                    Showing the latest {RECENT_HISTORY_LIMIT}. Use the history
+                    icon to review the full log.
+                  </span>
+                ) : null}
+              </div>
               <div className="max-h-60 space-y-2 overflow-y-auto rounded-md border bg-background p-3">
                 {loading ? (
                   <p className="text-sm text-muted-foreground">
@@ -228,27 +238,29 @@ export function RoomTypeAdjustmentsDialog({
                 ) : error ? (
                   <p className="text-sm text-destructive">{error}</p>
                 ) : adjustments.length ? (
-                  adjustments.map((entry, index) => (
-                    <div
-                      key={entry.id}
-                      className="rounded-md border bg-muted/30 px-3 py-2 text-sm"
-                    >
-                      <div className="flex items-center justify-between">
-                        <p className="font-semibold">
-                          {formatAdjustment(entry.adjustment_amount)}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {formatDateTime(entry.effective_date)}
-                        </p>
+                  adjustments
+                    .slice(0, RECENT_HISTORY_LIMIT)
+                    .map((entry, index) => (
+                      <div
+                        key={entry.id}
+                        className="rounded-md border bg-muted/30 px-3 py-2 text-sm"
+                      >
+                        <div className="flex items-center justify-between">
+                          <p className="font-semibold">
+                            {formatAdjustment(entry.adjustment_amount)}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {formatDateTime(entry.effective_date)}
+                          </p>
+                        </div>
+                        <p className="text-muted-foreground">{entry.reason}</p>
+                        {index === 0 ? (
+                          <span className="mt-1 inline-flex rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
+                            Latest
+                          </span>
+                        ) : null}
                       </div>
-                      <p className="text-muted-foreground">{entry.reason}</p>
-                      {index === 0 ? (
-                        <span className="mt-1 inline-flex rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
-                          Latest
-                        </span>
-                      ) : null}
-                    </div>
-                  ))
+                    ))
                 ) : (
                   <p className="text-sm text-muted-foreground">
                     No adjustments recorded yet.

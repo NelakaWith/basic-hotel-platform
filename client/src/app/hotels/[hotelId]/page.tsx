@@ -19,8 +19,9 @@ import {
   RoomTypeTable,
   type RoomTypeRow,
 } from "@/components/room-types/room-type-table";
-import { TrendingUp } from "lucide-react";
+import { History, TrendingUp } from "lucide-react";
 import { RoomTypeAdjustmentsDialog } from "@/app/room-types/components/room-type-adjustments-dialog";
+import { RoomTypeHistoryDialog } from "@/app/room-types/components/room-type-history-dialog";
 
 type HotelDetail = {
   id: number;
@@ -70,6 +71,8 @@ function HotelDetailPage() {
   const [adjustmentRoomType, setAdjustmentRoomType] = useState<RoomType | null>(
     null
   );
+  const [isHistoryDialogOpen, setIsHistoryDialogOpen] = useState(false);
+  const [historyRoomType, setHistoryRoomType] = useState<RoomType | null>(null);
   const { getHotel, getRoomTypes } = useApi();
 
   const hotelId = useMemo(() => {
@@ -97,6 +100,11 @@ function HotelDetailPage() {
   const handleAdjustmentsClick = (roomType: RoomTypeRow) => {
     setAdjustmentRoomType(roomType as RoomType);
     setIsAdjustmentDialogOpen(true);
+  };
+
+  const handleHistoryClick = (roomType: RoomTypeRow) => {
+    setHistoryRoomType(roomType as RoomType);
+    setIsHistoryDialogOpen(true);
   };
 
   const fetchHotel = useCallback(
@@ -138,6 +146,11 @@ function HotelDetailPage() {
         const list = data.room_types || [];
         setRoomTypes(list);
         setAdjustmentRoomType((current) => {
+          if (!current) return current;
+          const next = list.find((item) => item.id === current.id);
+          return next ?? current;
+        });
+        setHistoryRoomType((current) => {
           if (!current) return current;
           const next = list.find((item) => item.id === current.id);
           return next ?? current;
@@ -245,16 +258,30 @@ function HotelDetailPage() {
         emptyMessage={hotel ? "No room types configured." : "Select a hotel."}
         actionsColumnLabel="Adjustments"
         renderActions={(roomType) => (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            aria-label={`Adjust rate for ${roomType.name}`}
-            onClick={() => handleAdjustmentsClick(roomType)}
-          >
-            <TrendingUp className="h-4 w-4" />
-            <span className="sr-only">Adjust rate for {roomType.name}</span>
-          </Button>
+          <>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              aria-label={`View adjustment history for ${roomType.name}`}
+              onClick={() => handleHistoryClick(roomType)}
+            >
+              <History className="h-4 w-4" />
+              <span className="sr-only">
+                View adjustment history for {roomType.name}
+              </span>
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              aria-label={`Adjust rate for ${roomType.name}`}
+              onClick={() => handleAdjustmentsClick(roomType)}
+            >
+              <TrendingUp className="h-4 w-4" />
+              <span className="sr-only">Adjust rate for {roomType.name}</span>
+            </Button>
+          </>
         )}
       />
 
@@ -271,6 +298,18 @@ function HotelDetailPage() {
         onAdjustmentSaved={() => {
           if (authToken && hotelId !== null) {
             fetchRoomTypes(authToken, hotelId);
+          }
+        }}
+      />
+
+      <RoomTypeHistoryDialog
+        roomType={historyRoomType}
+        open={isHistoryDialogOpen}
+        authToken={authToken}
+        onOpenChange={(open) => {
+          setIsHistoryDialogOpen(open);
+          if (!open) {
+            setHistoryRoomType(null);
           }
         }}
       />
