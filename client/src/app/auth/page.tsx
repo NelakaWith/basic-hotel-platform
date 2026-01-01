@@ -88,7 +88,7 @@ function AuthPage() {
             <Button
               type="submit"
               className="w-full cursor-pointer"
-              disabled={loading}
+              disabled={loading || !username.trim() || !password.trim()}
             >
               {loading ? "Signing in..." : "Sign In"}
             </Button>
