@@ -13,6 +13,10 @@ type ApiClient = {
   getHotels: <T = { hotels: unknown[] }>(
     options?: RequestOptions
   ) => Promise<T>;
+  getHotel: <T = { hotel: unknown }>(
+    id: number,
+    options?: RequestOptions
+  ) => Promise<T>;
   createHotel: <T = unknown>(
     payload: { name: string; location: string; status?: string },
     options?: RequestOptions
@@ -85,6 +89,11 @@ export function useApi(): ApiClient {
     [request]
   );
 
+  const getHotel: ApiClient["getHotel"] = useCallback(
+    (id, options) => request(`/hotels/${id}`, options),
+    [request]
+  );
+
   const createHotel: ApiClient["createHotel"] = useCallback(
     (payload, options) =>
       request("/hotels", {
@@ -151,6 +160,7 @@ export function useApi(): ApiClient {
   return {
     request,
     getHotels,
+    getHotel,
     createHotel,
     updateHotel,
     deleteHotel,

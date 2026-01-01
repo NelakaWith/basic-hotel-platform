@@ -22,7 +22,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ConfirmDialog } from "@/components/confirm-dialog";
-import { Pencil, Trash2 } from "lucide-react";
+import { Eye, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { NewHotelForm } from "./components/new-hotel-form";
 
@@ -99,6 +99,10 @@ function HotelsPage() {
     setDialogMode("edit");
     setActiveHotel(hotel);
     setIsDialogOpen(true);
+  };
+
+  const handleViewClick = (hotelId: number) => {
+    router.push(`/hotels/${hotelId}`);
   };
 
   const handleDeleteClick = (hotel: Hotel) => {
@@ -228,6 +232,16 @@ function HotelsPage() {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        aria-label={`View ${hotel.name}`}
+                        onClick={() => handleViewClick(hotel.id)}
+                      >
+                        <Eye className="h-4 w-4" />
+                        <span className="sr-only">View {hotel.name}</span>
+                      </Button>
                       <Button
                         variant="ghost"
                         size="icon"
