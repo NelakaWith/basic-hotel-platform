@@ -9,10 +9,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
 import { useApi } from "@/lib/use-api";
 import { getAuth } from "@/lib/auth-storage";
 import { useRouter } from "next/navigation";
+import { AppSectionHeader } from "@/components/app-section-header";
 
 type RoomType = {
   id: number;
@@ -64,13 +64,13 @@ function RoomTypesPage() {
 
   return (
     <section className="space-y-4 p-4">
-      <header className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Room Types</h1>
-          <p className="text-sm text-muted-foreground">{subtitle}</p>
-        </div>
-        <Button disabled>New Room Type</Button>
-      </header>
+      <AppSectionHeader
+        title="Room Types"
+        subtitle={subtitle}
+        ctaLabel="New Room Type"
+        ctaDisabled
+        backHref="/hotels"
+      />
 
       <div className="rounded-md border bg-background">
         <Table>
