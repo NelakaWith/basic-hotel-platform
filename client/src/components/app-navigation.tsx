@@ -31,7 +31,7 @@ export function AppNavigation() {
       setReady(true);
     });
     return () => cancelAnimationFrame(id);
-  }, []);
+  }, [pathname]);
 
   if (!ready || !authed) {
     return null;
