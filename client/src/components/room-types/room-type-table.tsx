@@ -50,6 +50,7 @@ export function RoomTypeTable({
   actionsColumnLabel = "Actions",
   className,
 }: RoomTypeTableProps) {
+  // Table layout shifts based on whether optional columns/actions are enabled.
   const columnCount = 5 + (showHotelColumn ? 1 : 0) + (renderActions ? 1 : 0);
 
   return (

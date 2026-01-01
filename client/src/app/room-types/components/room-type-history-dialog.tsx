@@ -75,6 +75,7 @@ export function RoomTypeHistoryDialog({
     if (open && roomType) {
       fetchAdjustments();
     } else if (!open) {
+      // Drop cached history when closing so the next room loads fresh data.
       setAdjustments([]);
       setError(null);
     }

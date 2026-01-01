@@ -70,6 +70,7 @@ function HotelsPage() {
   useEffect(() => {
     const auth = getAuth();
     if (!auth?.user) {
+      // Force an auth redirect when the cookie/local state has expired.
       router.replace("/auth");
       return;
     }
@@ -114,6 +115,7 @@ function HotelsPage() {
       await deleteHotel(hotelToDelete.id);
       setConfirmOpen(false);
       setHotelToDelete(null);
+      // Reload list so table reflects the mutation without guessing state.
       fetchHotels();
     } catch (err) {
       const message =

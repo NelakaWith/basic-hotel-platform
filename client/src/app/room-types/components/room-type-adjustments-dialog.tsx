@@ -37,7 +37,7 @@ const textareaClasses =
 
 const formatCurrency = (value: number) => `$${value.toFixed(2)}`;
 
-const RECENT_HISTORY_LIMIT = 3;
+const RECENT_HISTORY_LIMIT = 3; // Dialog only shows a small slice to stay compact.
 
 const formatAdjustment = (value: number) => {
   const abs = Math.abs(value);
@@ -91,6 +91,7 @@ export function RoomTypeAdjustmentsDialog({
 
   useEffect(() => {
     if (!open) {
+      // Reset the form when the dialog closes so values don't leak between rooms.
       resetForm();
     }
   }, [open, resetForm]);
