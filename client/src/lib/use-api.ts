@@ -1,12 +1,11 @@
 "use client";
 
 import { useCallback, useMemo } from "react";
+import { clearAuth } from "./auth-storage";
 
 const DEFAULT_API_BASE = "http://localhost:4000/api";
 
-type RequestOptions = RequestInit & {
-  authToken?: string | null;
-};
+type RequestOptions = RequestInit;
 
 type ApiClient = {
   request: <T = unknown>(path: string, options?: RequestOptions) => Promise<T>;
@@ -26,10 +25,7 @@ type ApiClient = {
     payload: Partial<{ name: string; location: string; status: string }>,
     options?: RequestOptions
   ) => Promise<T>;
-  deleteHotel: (
-    id: number,
-    options?: RequestOptions
-  ) => Promise<void>;
+  deleteHotel: (id: number, options?: RequestOptions) => Promise<void>;
   getRoomTypes: <T = { room_types: unknown[] }>(
     hotelId: number,
     options?: RequestOptions
@@ -44,10 +40,7 @@ type ApiClient = {
     payload: Partial<{ name: string; base_rate: number }>,
     options?: RequestOptions
   ) => Promise<T>;
-  deleteRoomType: (
-    id: number,
-    options?: RequestOptions
-  ) => Promise<void>;
+  deleteRoomType: (id: number, options?: RequestOptions) => Promise<void>;
   getRoomTypeAdjustments: <T = { adjustments: unknown[] }>(
     roomTypeId: number,
     options?: RequestOptions
@@ -61,6 +54,7 @@ type ApiClient = {
     },
     options?: RequestOptions
   ) => Promise<T>;
+  logout: () => Promise<void>;
 };
 
 export function useApi(): ApiClient {
@@ -71,19 +65,26 @@ export function useApi(): ApiClient {
 
   const request = useCallback(
     async <T = unknown>(path: string, options: RequestOptions = {}) => {
-      const { authToken, headers, ...rest } = options;
+      const { headers, ...rest } = options;
       const mergedHeaders: Record<string, string> = {
         "Content-Type": "application/json",
         ...(headers as Record<string, string> | undefined),
       };
-      if (authToken) {
-        mergedHeaders.Authorization = `Bearer ${authToken}`;
-      }
 
       const res = await fetch(`${baseUrl}${path}`, {
         ...rest,
         headers: mergedHeaders,
+        credentials: "include",
       });
+
+      if (res.status === 401) {
+        clearAuth();
+        if (typeof window !== "undefined") {
+          window.location.href = "/auth";
+        }
+        const message = await safeErrorMessage(res);
+        throw new Error(message || "Unauthorized");
+      }
 
       if (!res.ok) {
         const message = await safeErrorMessage(res);
@@ -188,6 +189,11 @@ export function useApi(): ApiClient {
       [request]
     );
 
+  const logout = useCallback(
+    () => request<void>("/logout", { method: "POST" }),
+    [request]
+  );
+
   return {
     request,
     getHotels,
@@ -201,6 +207,7 @@ export function useApi(): ApiClient {
     deleteRoomType,
     getRoomTypeAdjustments,
     createRoomTypeAdjustment,
+    logout,
   };
 }
 

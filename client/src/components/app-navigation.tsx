@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/navigation-menu";
 import { cn } from "@/lib/utils";
 import { clearAuth, getAuth } from "@/lib/auth-storage";
+import { useApi } from "@/lib/use-api";
 import { useEffect, useState } from "react";
 
 const navItems = [
@@ -21,11 +22,12 @@ export function AppNavigation() {
   const pathname = usePathname();
   const [authed, setAuthed] = useState(false);
   const [ready, setReady] = useState(false);
+  const { logout } = useApi();
 
   useEffect(() => {
     const id = requestAnimationFrame(() => {
       const session = getAuth();
-      setAuthed(!!session?.token);
+      setAuthed(!!session?.user);
       setReady(true);
     });
     return () => cancelAnimationFrame(id);
@@ -64,9 +66,15 @@ export function AppNavigation() {
               <NavigationMenuItem>
                 <NavigationMenuLink asChild active={false}>
                   <button
-                    onClick={() => {
-                      clearAuth();
-                      window.location.href = "/auth";
+                    onClick={async () => {
+                      try {
+                        await logout();
+                      } catch (err) {
+                        console.error("Failed to logout", err);
+                      } finally {
+                        clearAuth();
+                        window.location.href = "/auth";
+                      }
                     }}
                     className={cn(
                       "rounded-md px-3 py-2 text-sm font-medium transition-colors text-foreground/80 hover:bg-muted hover:text-foreground"

@@ -23,10 +23,15 @@ export async function authenticate(username, password) {
 
 export function authMiddleware(req, res, next) {
   const header = req.headers.authorization;
-  if (!header || !header.startsWith("Bearer ")) {
+  const bearerToken =
+    header && header.startsWith("Bearer ")
+      ? header.replace("Bearer ", "").trim()
+      : null;
+  const cookieToken = req.cookies?.[config.cookieName];
+  const token = bearerToken || cookieToken;
+  if (!token) {
     return res.status(401).json({ error: "Unauthorized" });
   }
-  const token = header.replace("Bearer ", "").trim();
   try {
     const payload = jwt.verify(token, config.jwtSecret);
     req.user = payload;

@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useApi } from "@/lib/use-api";
+import { getAuth } from "@/lib/auth-storage";
 import type { RoomTypeRow } from "@/components/room-types/room-type-table";
 
 export type RateAdjustment = {
@@ -27,7 +28,6 @@ export type RateAdjustment = {
 type RoomTypeAdjustmentsDialogProps = {
   roomType: RoomTypeRow | null;
   open: boolean;
-  authToken: string | null;
   onOpenChange: (open: boolean) => void;
   onAdjustmentSaved?: () => void;
 };
@@ -65,7 +65,6 @@ const toLocalInputValue = (date: Date) => {
 export function RoomTypeAdjustmentsDialog({
   roomType,
   open,
-  authToken,
   onOpenChange,
   onAdjustmentSaved,
 }: RoomTypeAdjustmentsDialogProps) {
@@ -81,7 +80,7 @@ export function RoomTypeAdjustmentsDialog({
   const [submitting, setSubmitting] = useState(false);
   const { getRoomTypeAdjustments, createRoomTypeAdjustment } = useApi();
 
-  const canSubmit = !!authToken && !!roomType;
+  const canSubmit = !!roomType;
 
   const resetForm = useCallback(() => {
     setEffectiveDate(toLocalInputValue(new Date()));
@@ -97,13 +96,14 @@ export function RoomTypeAdjustmentsDialog({
   }, [open, resetForm]);
 
   const fetchAdjustments = useCallback(async () => {
-    if (!roomType || !authToken) return;
+    const session = getAuth();
+    if (!roomType || !session?.user) return;
     setLoading(true);
     setError(null);
     try {
       const data = await getRoomTypeAdjustments<{
         adjustments: RateAdjustment[];
-      }>(roomType.id, { authToken });
+      }>(roomType.id);
       const normalized = (data.adjustments || []).map((entry) => ({
         ...entry,
         adjustment_amount: Number(entry.adjustment_amount),
@@ -119,18 +119,19 @@ export function RoomTypeAdjustmentsDialog({
     } finally {
       setLoading(false);
     }
-  }, [roomType, authToken, getRoomTypeAdjustments]);
+  }, [roomType, getRoomTypeAdjustments]);
 
   useEffect(() => {
-    if (open && roomType && authToken) {
+    if (open && roomType) {
       fetchAdjustments();
     }
-  }, [open, roomType, authToken, fetchAdjustments]);
+  }, [open, roomType, fetchAdjustments]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!roomType) return;
-    if (!authToken) {
+    const session = getAuth();
+    if (!session?.user) {
       const message = "Session expired. Please sign in again.";
       setSubmitError(message);
       toast.error(message);
@@ -155,15 +156,11 @@ export function RoomTypeAdjustmentsDialog({
     setSubmitError(null);
     try {
       const isoEffectiveDate = new Date(effectiveDate).toISOString();
-      await createRoomTypeAdjustment(
-        roomType.id,
-        {
-          effective_date: isoEffectiveDate,
-          adjustment_amount: parsedAmount,
-          reason: reason.trim(),
-        },
-        { authToken }
-      );
+      await createRoomTypeAdjustment(roomType.id, {
+        effective_date: isoEffectiveDate,
+        adjustment_amount: parsedAmount,
+        reason: reason.trim(),
+      });
       toast.success("Rate adjustment recorded", {
         description: `${roomType.name} now reflects the new change.`,
       });

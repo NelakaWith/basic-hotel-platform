@@ -69,7 +69,7 @@ export function RoomTypeForm({
 
   const handleSubmit = form.handleSubmit(async (values) => {
     const auth = getAuth();
-    if (!auth?.token) {
+    if (!auth?.user) {
       const message = "Your session has expired. Please sign in again.";
       setSubmitError(message);
       toast.error(message);
@@ -99,15 +99,13 @@ export function RoomTypeForm({
       };
 
       if (formMode === "edit" && initialRoomType) {
-        await updateRoomType(initialRoomType.id, payload, {
-          authToken: auth.token,
-        });
+        await updateRoomType(initialRoomType.id, payload);
         form.reset({
           name: payload.name,
           base_rate: payload.base_rate.toString(),
         });
       } else {
-        await createRoomType(hotelId, payload, { authToken: auth.token });
+        await createRoomType(hotelId, payload);
         form.reset(emptyValues);
       }
 

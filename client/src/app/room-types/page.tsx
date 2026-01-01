@@ -45,7 +45,7 @@ function RoomTypesPage() {
   const [roomTypes, setRoomTypes] = useState<RoomType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [authToken, setAuthToken] = useState<string | null>(null);
+  const [hasSession, setHasSession] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [dialogMode, setDialogMode] = useState<"create" | "edit">("create");
   const [activeRoomType, setActiveRoomType] = useState<RoomType | null>(null);
@@ -74,13 +74,11 @@ function RoomTypesPage() {
   }, [searchParams]);
 
   const fetchRoomTypes = useCallback(
-    async (token: string, hotelId: number) => {
+    async (hotelId: number) => {
       setLoading(true);
       setError(null);
       try {
-        const data = await getRoomTypes<{ room_types: RoomType[] }>(hotelId, {
-          authToken: token,
-        });
+        const data = await getRoomTypes<{ room_types: RoomType[] }>(hotelId);
         const list = data.room_types || [];
         setRoomTypes(list);
         setAdjustmentRoomType((current) => {
@@ -109,19 +107,17 @@ function RoomTypesPage() {
 
   useEffect(() => {
     const auth = getAuth();
-    if (!auth?.token) {
+    if (!auth?.user) {
       router.replace("/auth");
       return;
     }
 
-    setAuthToken(auth.token);
+    setHasSession(true);
 
     if (!hotels.length) {
       const loadHotels = async () => {
         try {
-          const data = await getHotels<{ hotels: HotelSummary[] }>({
-            authToken: auth.token,
-          });
+          const data = await getHotels<{ hotels: HotelSummary[] }>();
           const list = data.hotels || [];
           setHotels(list);
           if (!list.length) {
@@ -137,7 +133,7 @@ function RoomTypesPage() {
             ? (initialQueryHotelId as number)
             : list[0].id;
           setSelectedHotelId(resolvedId);
-          fetchRoomTypes(auth.token, resolvedId);
+          fetchRoomTypes(resolvedId);
         } catch (err) {
           const message =
             err instanceof Error ? err.message : "Failed to load hotels";
@@ -159,7 +155,7 @@ function RoomTypesPage() {
       initialQueryHotelId !== selectedHotelId
     ) {
       setSelectedHotelId(initialQueryHotelId);
-      fetchRoomTypes(auth.token, initialQueryHotelId);
+      fetchRoomTypes(initialQueryHotelId);
     }
   }, [
     fetchRoomTypes,
@@ -218,11 +214,7 @@ function RoomTypesPage() {
     setActiveRoomType(null);
     setRoomTypeToDelete(null);
     setConfirmOpen(false);
-    if (authToken) {
-      fetchRoomTypes(authToken, nextId);
-    } else {
-      setRoomTypes([]);
-    }
+    fetchRoomTypes(nextId);
     const params = new URLSearchParams(searchParams.toString());
     params.set("hotelId", String(nextId));
     const query = params.toString();
@@ -231,21 +223,23 @@ function RoomTypesPage() {
 
   const handleDeleteConfirm = async () => {
     if (!roomTypeToDelete) return;
-    if (!authToken) {
+    const session = getAuth();
+    if (!session?.user) {
       const message = "Session expired. Please sign in again.";
       setDeleteError(message);
       toast.error(message);
+      router.replace("/auth");
       return;
     }
 
     setIsDeleting(true);
     setDeleteError(null);
     try {
-      await deleteRoomType(roomTypeToDelete.id, { authToken });
+      await deleteRoomType(roomTypeToDelete.id);
       setConfirmOpen(false);
       setRoomTypeToDelete(null);
       if (selectedHotelId) {
-        fetchRoomTypes(authToken, selectedHotelId);
+        fetchRoomTypes(selectedHotelId);
       } else {
         setRoomTypes([]);
       }
@@ -268,7 +262,7 @@ function RoomTypesPage() {
         subtitle={subtitle}
         ctaLabel="New Room Type"
         onCtaClick={openCreateDialog}
-        ctaDisabled={!authToken || !selectedHotelId}
+        ctaDisabled={!hasSession || !selectedHotelId}
         backHref="/hotels"
       />
 
@@ -282,7 +276,7 @@ function RoomTypesPage() {
         <Select
           value={selectedHotelId !== null ? String(selectedHotelId) : undefined}
           onValueChange={handleHotelChange}
-          disabled={!hotels.length || !authToken}
+          disabled={!hotels.length || !hasSession}
         >
           <SelectTrigger className="flex h-10 min-w-[200px] flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
             <SelectValue
@@ -333,8 +327,8 @@ function RoomTypesPage() {
                 setIsDialogOpen(false);
                 setDialogMode("create");
                 setActiveRoomType(null);
-                if (authToken) {
-                  fetchRoomTypes(authToken, selectedHotelId);
+                if (selectedHotelId) {
+                  fetchRoomTypes(selectedHotelId);
                 }
               }}
             />
@@ -430,7 +424,6 @@ function RoomTypesPage() {
       <RoomTypeAdjustmentsDialog
         roomType={adjustmentRoomType}
         open={isAdjustmentDialogOpen}
-        authToken={authToken}
         onOpenChange={(open) => {
           setIsAdjustmentDialogOpen(open);
           if (!open) {
@@ -438,8 +431,8 @@ function RoomTypesPage() {
           }
         }}
         onAdjustmentSaved={() => {
-          if (authToken && selectedHotelId) {
-            fetchRoomTypes(authToken, selectedHotelId);
+          if (selectedHotelId) {
+            fetchRoomTypes(selectedHotelId);
           }
         }}
       />
@@ -447,7 +440,6 @@ function RoomTypesPage() {
       <RoomTypeHistoryDialog
         roomType={historyRoomType}
         open={isHistoryDialogOpen}
-        authToken={authToken}
         onOpenChange={(open) => {
           setIsHistoryDialogOpen(open);
           if (!open) {

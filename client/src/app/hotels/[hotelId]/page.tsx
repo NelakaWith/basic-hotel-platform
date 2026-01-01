@@ -66,7 +66,6 @@ function HotelDetailPage() {
   const [roomTypesLoading, setRoomTypesLoading] = useState(true);
   const [hotelError, setHotelError] = useState<string | null>(null);
   const [roomTypesError, setRoomTypesError] = useState<string | null>(null);
-  const [authToken, setAuthToken] = useState<string | null>(null);
   const [isAdjustmentDialogOpen, setIsAdjustmentDialogOpen] = useState(false);
   const [adjustmentRoomType, setAdjustmentRoomType] = useState<RoomType | null>(
     null
@@ -108,13 +107,11 @@ function HotelDetailPage() {
   };
 
   const fetchHotel = useCallback(
-    async (token: string, id: number) => {
+    async (id: number) => {
       setHotelLoading(true);
       setHotelError(null);
       try {
-        const data = await getHotel<HotelDetail | { hotel: HotelDetail }>(id, {
-          authToken: token,
-        });
+        const data = await getHotel<HotelDetail | { hotel: HotelDetail }>(id);
         const detail = normalizeHotelResponse(data);
         if (!detail) {
           throw new Error("Hotel not found");
@@ -136,13 +133,11 @@ function HotelDetailPage() {
   );
 
   const fetchRoomTypes = useCallback(
-    async (token: string, id: number) => {
+    async (id: number) => {
       setRoomTypesLoading(true);
       setRoomTypesError(null);
       try {
-        const data = await getRoomTypes<{ room_types: RoomType[] }>(id, {
-          authToken: token,
-        });
+        const data = await getRoomTypes<{ room_types: RoomType[] }>(id);
         const list = data.room_types || [];
         setRoomTypes(list);
         setAdjustmentRoomType((current) => {
@@ -180,14 +175,13 @@ function HotelDetailPage() {
     }
 
     const auth = getAuth();
-    if (!auth?.token) {
+    if (!auth?.user) {
       router.replace("/auth");
       return;
     }
 
-    setAuthToken(auth.token);
-    fetchHotel(auth.token, hotelId);
-    fetchRoomTypes(auth.token, hotelId);
+    fetchHotel(hotelId);
+    fetchRoomTypes(hotelId);
   }, [fetchHotel, fetchRoomTypes, hotelId, router]);
 
   const headerSubtitle = useMemo(() => {
@@ -288,7 +282,6 @@ function HotelDetailPage() {
       <RoomTypeAdjustmentsDialog
         roomType={adjustmentRoomType}
         open={isAdjustmentDialogOpen}
-        authToken={authToken}
         onOpenChange={(open) => {
           setIsAdjustmentDialogOpen(open);
           if (!open) {
@@ -296,8 +289,8 @@ function HotelDetailPage() {
           }
         }}
         onAdjustmentSaved={() => {
-          if (authToken && hotelId !== null) {
-            fetchRoomTypes(authToken, hotelId);
+          if (hotelId !== null) {
+            fetchRoomTypes(hotelId);
           }
         }}
       />
@@ -305,7 +298,6 @@ function HotelDetailPage() {
       <RoomTypeHistoryDialog
         roomType={historyRoomType}
         open={isHistoryDialogOpen}
-        authToken={authToken}
         onOpenChange={(open) => {
           setIsHistoryDialogOpen(open);
           if (!open) {

@@ -18,14 +18,14 @@ import { getAuth, setAuth } from "@/lib/auth-storage";
 function AuthPage() {
   const router = useRouter();
   const { request } = useApi();
-  const [username, setUsername] = useState("admin");
-  const [password, setPassword] = useState("password123");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const auth = getAuth();
-    if (auth?.token) {
+    if (auth?.user) {
       router.replace("/hotels");
     }
   }, [router]);
@@ -36,13 +36,12 @@ function AuthPage() {
     setLoading(true);
     try {
       const data = await request<{
-        token: string;
         user: { id: number; username: string };
       }>("/login", {
         method: "POST",
         body: JSON.stringify({ username, password }),
       });
-      setAuth({ token: data.token, user: data.user });
+      setAuth({ user: data.user });
       router.push("/hotels");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Sign-in failed");

@@ -70,7 +70,7 @@ export function NewHotelForm({
 
   const handleSubmit = form.handleSubmit(async (values) => {
     const auth = getAuth();
-    if (!auth?.token) {
+    if (!auth?.user) {
       const message = "Your session has expired. Please sign in again.";
       setSubmitError(message);
       toast.error(message);
@@ -86,10 +86,10 @@ export function NewHotelForm({
       };
 
       if (formMode === "edit" && initialHotel) {
-        await updateHotel(initialHotel.id, payload, { authToken: auth.token });
+        await updateHotel(initialHotel.id, payload);
         form.reset(payload);
       } else {
-        await createHotel(payload, { authToken: auth.token });
+        await createHotel(payload);
         form.reset({ name: "", location: "", status: "active" });
       }
 

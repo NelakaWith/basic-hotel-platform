@@ -2,12 +2,13 @@
 
 const AUTH_KEY = "auth/session";
 
-type AuthSession = {
-  token: string;
-  user: {
-    id: number;
-    username: string;
-  };
+type AuthUser = {
+  id: number;
+  username: string;
+};
+
+export type AuthSession = {
+  user: AuthUser;
 };
 
 export function getAuth(): AuthSession | null {
@@ -15,7 +16,11 @@ export function getAuth(): AuthSession | null {
   const raw = window.localStorage.getItem(AUTH_KEY);
   if (!raw) return null;
   try {
-    return JSON.parse(raw) as AuthSession;
+    const parsed = JSON.parse(raw) as Partial<AuthSession & { token?: string }>;
+    if (parsed && parsed.user) {
+      return { user: parsed.user };
+    }
+    return null;
   } catch (err) {
     return null;
   }

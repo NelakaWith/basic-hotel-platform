@@ -9,11 +9,21 @@ import {
   validate,
 } from "./validators.js";
 import { computeEffectiveRate } from "./rates.js";
+import { config } from "./config.js";
 
 const router = express.Router();
 
 const toDateTime = (input) =>
   new Date(input).toISOString().slice(0, 19).replace("T", " ");
+
+const cookieOptions = {
+  httpOnly: true,
+  sameSite: "lax",
+  secure: config.cookieSecure,
+  path: "/",
+  maxAge: 12 * 60 * 60 * 1000, // 12 hours to match JWT expiry
+  ...(config.cookieDomain ? { domain: config.cookieDomain } : {}),
+};
 
 router.post("/login", async (req, res, next) => {
   try {
@@ -23,10 +33,22 @@ router.post("/login", async (req, res, next) => {
       return res.status(401).json({ error: "Invalid credentials" });
     }
     const token = generateToken(user);
-    res.json({ token, user });
+    res.cookie(config.cookieName, token, cookieOptions);
+    res.json({ user });
   } catch (err) {
     next(err);
   }
+});
+
+router.post("/logout", (req, res) => {
+  res.clearCookie(config.cookieName, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: config.cookieSecure,
+    path: "/",
+    ...(config.cookieDomain ? { domain: config.cookieDomain } : {}),
+  });
+  res.status(204).send();
 });
 
 router.use(authMiddleware);

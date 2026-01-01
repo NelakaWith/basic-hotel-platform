@@ -1,6 +1,6 @@
 # Basic Hotel Platform
 
-> **Note:** The Express API in this repo is a quick demo scaffold (not the FastAPI/SQLAlchemy stack described in the assessment brief). Use it only for exercising the frontend; swap in the required backend when evaluating the final solution.
+> **Note:** The Express API in this repo is a quick demo scaffold (not the FastAPI/SQLAlchemy stack described in the assessment brief). Use it only for exercising the frontend.
 
 Internal admin tool that lets hotel staff sign in, manage properties, manage their room types, and capture rate adjustments with full history tracking. The project is split into an Express API (`api/`) backed by MySQL and a Next.js 13+ App Router client (`client/`).
 

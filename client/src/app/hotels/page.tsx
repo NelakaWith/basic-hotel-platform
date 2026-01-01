@@ -38,7 +38,7 @@ function HotelsPage() {
   const [hotels, setHotels] = useState<Hotel[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [authToken, setAuthToken] = useState<string | null>(null);
+  const [isAuthed, setIsAuthed] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [dialogMode, setDialogMode] = useState<"create" | "edit">("create");
   const [activeHotel, setActiveHotel] = useState<Hotel | null>(null);
@@ -49,38 +49,33 @@ function HotelsPage() {
   const { getHotels, deleteHotel } = useApi();
   const router = useRouter();
 
-  const fetchHotels = useCallback(
-    async (token: string) => {
-      setLoading(true);
-      setError(null);
-      try {
-        const data = await getHotels<{ hotels: Hotel[] }>({
-          authToken: token,
-        });
-        setHotels(data.hotels || []);
-      } catch (err: unknown) {
-        const message =
-          err instanceof Error ? err.message : "Failed to load hotels";
-        setError(message);
-        toast.error("Unable to load hotels", {
-          description: message,
-        });
-      } finally {
-        setLoading(false);
-      }
-    },
-    [getHotels]
-  );
+  const fetchHotels = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await getHotels<{ hotels: Hotel[] }>();
+      setHotels(data.hotels || []);
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Failed to load hotels";
+      setError(message);
+      toast.error("Unable to load hotels", {
+        description: message,
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [getHotels]);
 
   useEffect(() => {
     const auth = getAuth();
-    if (!auth?.token) {
+    if (!auth?.user) {
       router.replace("/auth");
       return;
     }
 
-    setAuthToken(auth.token);
-    fetchHotels(auth.token);
+    setIsAuthed(true);
+    fetchHotels();
   }, [fetchHotels, router]);
 
   const subtitle = useMemo(() => {
@@ -113,20 +108,13 @@ function HotelsPage() {
 
   const handleDeleteConfirm = async () => {
     if (!hotelToDelete) return;
-    if (!authToken) {
-      const message = "Session expired. Please sign in again.";
-      setDeleteError(message);
-      toast.error(message);
-      return;
-    }
-
     setIsDeleting(true);
     setDeleteError(null);
     try {
-      await deleteHotel(hotelToDelete.id, { authToken });
+      await deleteHotel(hotelToDelete.id);
       setConfirmOpen(false);
       setHotelToDelete(null);
-      fetchHotels(authToken);
+      fetchHotels();
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Failed to delete hotel";
@@ -146,7 +134,7 @@ function HotelsPage() {
         subtitle={subtitle}
         ctaLabel="New Hotel"
         onCtaClick={openCreateDialog}
-        ctaDisabled={!authToken}
+        ctaDisabled={!isAuthed}
       />
 
       <Dialog
@@ -177,9 +165,7 @@ function HotelsPage() {
               setIsDialogOpen(false);
               setDialogMode("create");
               setActiveHotel(null);
-              if (authToken) {
-                fetchHotels(authToken);
-              }
+              fetchHotels();
             }}
           />
         </DialogContent>

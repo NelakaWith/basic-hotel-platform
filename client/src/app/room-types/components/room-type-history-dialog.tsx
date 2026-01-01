@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { useApi } from "@/lib/use-api";
 import type { RateAdjustment } from "./room-type-adjustments-dialog";
 import type { RoomTypeRow } from "@/components/room-types/room-type-table";
+import { getAuth } from "@/lib/auth-storage";
 
 const formatCurrency = (value: number) => `$${value.toFixed(2)}`;
 
@@ -31,14 +32,12 @@ const formatDateTime = (value: string) =>
 export type RoomTypeHistoryDialogProps = {
   roomType: RoomTypeRow | null;
   open: boolean;
-  authToken: string | null;
   onOpenChange: (open: boolean) => void;
 };
 
 export function RoomTypeHistoryDialog({
   roomType,
   open,
-  authToken,
   onOpenChange,
 }: RoomTypeHistoryDialogProps) {
   const [adjustments, setAdjustments] = useState<RateAdjustment[]>([]);
@@ -47,13 +46,14 @@ export function RoomTypeHistoryDialog({
   const { getRoomTypeAdjustments } = useApi();
 
   const fetchAdjustments = useCallback(async () => {
-    if (!roomType || !authToken) return;
+    const session = getAuth();
+    if (!roomType || !session?.user) return;
     setLoading(true);
     setError(null);
     try {
       const data = await getRoomTypeAdjustments<{
         adjustments: RateAdjustment[];
-      }>(roomType.id, { authToken });
+      }>(roomType.id);
       const normalized = (data.adjustments || []).map((entry) => ({
         ...entry,
         adjustment_amount: Number(entry.adjustment_amount),
@@ -69,16 +69,16 @@ export function RoomTypeHistoryDialog({
     } finally {
       setLoading(false);
     }
-  }, [roomType, authToken, getRoomTypeAdjustments]);
+  }, [roomType, getRoomTypeAdjustments]);
 
   useEffect(() => {
-    if (open && roomType && authToken) {
+    if (open && roomType) {
       fetchAdjustments();
     } else if (!open) {
       setAdjustments([]);
       setError(null);
     }
-  }, [open, roomType, authToken, fetchAdjustments]);
+  }, [open, roomType, fetchAdjustments]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
